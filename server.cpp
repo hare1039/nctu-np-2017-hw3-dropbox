@@ -79,60 +79,63 @@ private:
 	void launch_async_read_header()
 	{
 		auto self(shared_from_this());
-		boost::asio::async_read(socket_,
-		                        boost::asio::buffer(dataread_.header_ref()),
-		                        [this, self](boost::system::error_code err, std::size_t /*length*/)
-		                        {
-			                        if (not err && dataread_.try_decode_header_ok())
-			                        {
-				                        launch_async_read_body();
-			                        }
-			                        else
-			                        {
-				                        room_.leave(shared_from_this());
-			                        }
-		                        });
+		boost::asio::async_read(
+			socket_,
+			boost::asio::buffer(dataread_.header_ref()),
+			[this, self](boost::system::error_code err, std::size_t /*length*/)
+			{
+				if (not err && dataread_.try_decode_header_ok())
+				{
+					launch_async_read_body();
+				}
+				else
+				{
+					room_.leave(shared_from_this());
+				}
+			});
 	}
 
 	void launch_async_read_body()
 	{
 		auto self(shared_from_this());
-		boost::asio::async_read(socket_,
-		                        boost::asio::buffer(dataread_.body_ref()),
-		                        [this, self](boost::system::error_code err, std::size_t /*length*/)
-		                        {
-			                        if (not err)
-			                        {
-				                        room_.deliver(dataread_);
-				                        launch_async_read_header();
-			                        }
-			                        else
-			                        {
-				                        room_.leave(shared_from_this());
-			                        }
-		                        });
+		boost::asio::async_read(
+			socket_,
+			boost::asio::buffer(dataread_.body_ref()),
+			[this, self](boost::system::error_code err, std::size_t /*length*/)
+			{
+				if (not err)
+				{
+					room_.deliver(dataread_);
+					launch_async_read_header();
+				}
+				else
+				{
+					room_.leave(shared_from_this());
+				}
+			});
 	}
 
 	
 	void launch_async_write()
 	{
 		auto self(shared_from_this());
-		boost::asio::async_write(socket_,
-		                         boost::asio::buffer(filedatas_.front().data()),
-		                         [this, self](boost::system::error_code err, std::size_t /*length*/){
-			                         if(not err)
-			                         {
-				                         filedatas_.pop_front();
-				                         if(not filedatas_.empty())
-				                         {
-					                         launch_async_write();
-				                         }
-			                         }
-			                         else
-			                         {
-				                         room_.leave(shared_from_this());
-			                         }
-		                         });
+		boost::asio::async_write(
+			socket_,
+			boost::asio::buffer(filedatas_.front().data()),
+			[this, self](boost::system::error_code err, std::size_t /*length*/){
+				if(not err)
+				{
+					filedatas_.pop_front();
+					if(not filedatas_.empty())
+					{
+						launch_async_write();
+					}
+				}
+				else
+				{
+					room_.leave(shared_from_this());
+				}
+			});
 	}
 };
 
@@ -151,24 +154,25 @@ public:
 private:
 	void launch_accept()
 	{
-		acceptor_.async_accept(socket_,
-		                       [this](boost::system::error_code err)
-		                       {
-			                       if (not err)
-			                       {
-				                       // client will request for a room by name
-				                       boost::asio::streambuf response; 
-				                       auto size = boost::asio::read_until(socket_, response, "\n");
-				                       auto bufs = response.data();
-				                       std::string name(boost::asio::buffers_begin(bufs), boost::asio::buffers_begin(bufs) + size);
-				                       boost::system::error_code greet_err;
-				                       boost::asio::write(socket_, boost::asio::buffer("Welcome to the dropbox-like server! " + name), greet_err);
-				                       if(not greet_err)
-					                       std::make_shared<session>(std::move(socket_), rooms_[name])->start();
-			                       }
+		acceptor_.async_accept(
+			socket_,
+			[this](boost::system::error_code err)
+			{
+				if (not err)
+				{
+					// client will request for a room by name
+					boost::asio::streambuf response; 
+					auto size = boost::asio::read_until(socket_, response, "\n");
+					auto bufs = response.data();
+					std::string name(boost::asio::buffers_begin(bufs), boost::asio::buffers_begin(bufs) + size);
+					boost::system::error_code greet_err;
+					boost::asio::write(socket_, boost::asio::buffer("Welcome to the dropbox-like server! " + name), greet_err);
+					if(not greet_err)
+						std::make_shared<session>(std::move(socket_), rooms_[name])->start();
+				}
 
-			                       launch_accept();
-		                       });
+				launch_accept();
+			});
 	}
 };
 
