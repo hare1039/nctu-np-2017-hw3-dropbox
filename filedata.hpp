@@ -11,7 +11,7 @@ typedef std::vector<std::uint8_t> vbyte;
 
 class filedata
 {
-	vbyte header_, body_;
+	vbyte header_, body_, static_data_;
 	std::string filename;
 	static const std::size_t header_legnth = 40; // [0-3] length, [4-39] file name
 public:
@@ -28,10 +28,10 @@ public:
 		return body_;
 	}
 
-	vbyte data() {
-		vbyte cat(header_);
-		cat.insert(cat.end(), body_.begin(), body_.end());
-		return cat;
+	vbyte& data() {
+		header_.swap(static_data_);
+		static_data_.insert(static_data_.end(), body_.begin(), body_.end());
+		return static_data_;
 	}
 
 	void build_from(std::string filename)
@@ -46,11 +46,11 @@ public:
 			             std::istream_iterator<char>(f),
 			             std::istream_iterator<char>());
 			int size = static_cast<int>(body_.size());
-			header_[3] = static_cast<std::uint8_t>(size << 24);
-			header_[2] = static_cast<std::uint8_t>(size << 16);
-            header_[1] = static_cast<std::uint8_t>(size << 8);
+			header_[3] = static_cast<std::uint8_t>(size >> 24);
+			header_[2] = static_cast<std::uint8_t>(size >> 16);
+            header_[1] = static_cast<std::uint8_t>(size >> 8);
 			header_[0] = static_cast<std::uint8_t>(size);
-
+			std::cout << "[filedata] encode:[3]:" << static_cast<int>(header_[3]) << " [2]:" << static_cast<int>(header_[2]) << " [1]:" << static_cast<int>(header_[1]) << " [0]:" << static_cast<int>(header_[0]) << "\n";
 			int i(4);
 			for(char c: filename)
 			{
@@ -58,7 +58,6 @@ public:
 				if(i == header_legnth)
 					break;
 			}
-			std::cout << "[filedata] encode:[3]:" << static_cast<int>(header_[3]) << " [2]:" << static_cast<int>(header_[2]) << " [1]:" << static_cast<int>(header_[1]) << " [0]:" << static_cast<int>(header_[0]) << "\n";
 			this->filename = filename;
 		}
 	}
@@ -84,7 +83,7 @@ public:
 		this->filename = "";
 		for(int i(4); i < header_legnth; i++)
 			this->filename += header_[i];
-		std::cout << "[filedata] decode:{ bodysize: " << bodysize << ", filename: " << this->filename << "}\n";
+		std::cout << "[filedata] decode:{bodysize: " << bodysize << ", filename: " << this->filename << "}\n";
 		return true;
 	}
 };

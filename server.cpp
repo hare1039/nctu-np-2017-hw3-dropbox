@@ -33,7 +33,7 @@ class room
 
 	void join(participant_ptr p)
 	{
-		std::cout << "room::join\n";
+		std::cout << "[room] join\n";
 		participants_.insert(p);
 		for(auto &file: this->files_)
 			p->deliver(file);
@@ -41,18 +41,21 @@ class room
 
 	void leave(participant_ptr p)
 	{
-		std::cout << "room::leave\n";
+		std::cout << "[room] leave\n";
 		participants_.erase(p);
 	}
 
-	void deliver(const filedata& file)
+	void deliver(const filedata& file, participant_ptr prohibited = nullptr)
 	{
-		std::cout << "room::deliver\n";
+		std::cout << "[room] deliver\n";
 		files_.push_back(file);
-		std::cout << "participant size: " << participants_.size() << std::endl;
+		std::cout << "# in room: " << participants_.size() << std::endl;
 		for(auto participant: participants_)
-			participant->deliver(file);
+			if(participant != prohibited)
+				participant->deliver(file);
 	}
+
+	
 };
 
 class session : public participant,
@@ -83,7 +86,7 @@ public:
 private:
 	void launch_async_read_header()
 	{
-		std::cout << "launch_async_read_header\n";
+		std::cout << "launch_async_read_header, supplied buffer size: " << dataread_.header_ref().size() << "\n";
 		auto self(shared_from_this());
 		boost::asio::async_read(
 			socket_,
@@ -96,6 +99,7 @@ private:
 				}
 				else
 				{
+					std::cout << "[session] lefted on reading header; reason: " << err.message() << std::endl;
 					room_.leave(shared_from_this());
 				}
 			});
@@ -103,7 +107,7 @@ private:
 
 	void launch_async_read_body()
 	{
-		std::cout << "launch_async_read_body\n";
+		std::cout << "launch_async_read_body, supplied buffer size: " << dataread_.body_ref().size() << "\n";
 		auto self(shared_from_this());
 		boost::asio::async_read(
 			socket_,
@@ -112,11 +116,12 @@ private:
 			{
 				if (not err)
 				{
-					room_.deliver(dataread_);
+					room_.deliver(dataread_, self);
 					launch_async_read_header();
 				}
 				else
 				{
+					std::cout << "[session] lefted on reading body; reason: " << err.message() << std::endl;
 					room_.leave(shared_from_this());
 				}
 			});
@@ -141,6 +146,7 @@ private:
 				}
 				else
 				{
+					std::cout << "[session] lefted on writing; reason: " << err.message() << std::endl;
 					room_.leave(shared_from_this());
 				}
 			});
@@ -196,8 +202,8 @@ private:
 
 int main(int argc, char* argv[])
 {
-//    try
-//    {
+    try
+    {
         if (argc < 2)
         {
             std::cerr << "Usage: server <port>\n";
@@ -207,11 +213,11 @@ int main(int argc, char* argv[])
         boost::asio::io_service io_service;
         server serve(io_service, tcp::endpoint(tcp::v4(), std::stoi(argv[1])));
         io_service.run();
-//    }
-//    catch (std::exception& e)
-//    {
-//        std::cerr << "Exception: " << e.what() << "\n";
-//    }
+    }
+    catch (std::exception& e)
+    {
+        std::cerr << "Exception: " << e.what() << "\n";
+    }
 
     return 0;
 }

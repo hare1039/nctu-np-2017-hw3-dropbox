@@ -43,6 +43,18 @@ public:
 	{
 		io_service_.post([this]{ socket_.close(); });
 	}
+
+	void sleep_for(int seconds)
+	{
+		io_service_.dispatch([seconds]{
+			using namespace std::chrono_literals;
+			for(int count(1); count <= seconds; count++)
+			{
+				std::this_thread::sleep_for(1s);
+				std::cout << "Client starts to sleep " << count << std::endl;
+			}
+		});
+	}
 private:
 	void launch_connect(tcp::resolver::iterator endpoint_iterator)
     {
@@ -78,6 +90,7 @@ private:
 				}
 				else
 				{
+					std::cout << "[client] lefted on reading header; reason: " << err.message() << std::endl;
 					socket_.close();
 				}
 			});
@@ -97,6 +110,7 @@ private:
 				}
 				else
 				{
+					std::cout << "[client] lefted on reading body; reason: " << err.message() << std::endl;
 					socket_.close();
 				}
 			});
@@ -119,6 +133,7 @@ private:
 				}
 				else
 				{
+					std::cout << "[client] lefted on writing; reason: " << err.message() << std::endl;
 					socket_.close();
 				}
 			});
@@ -143,8 +158,7 @@ int main(int argc, char *argv[])
         client c(name, io_service, endpoint_iterator);
 
         std::thread t([&io_service](){ io_service.run(); });
-
-
+        
         while (std::getline(std::cin, line))
         {
 	        auto space = line.find(" ");
@@ -168,13 +182,7 @@ int main(int argc, char *argv[])
 	        }
 	        else if (command == "/sleep")
 	        {
-		        using namespace std::chrono_literals;
-		        int limit(std::stoi(argument));
-		        for(int count(1); count <= limit; count++)
-		        {
-			        std::this_thread::sleep_for(1s);
-			        std::cout << "Client starts to sleep " << count << std::endl;
-		        }
+		        c.sleep_for(std::stoi(argument));
 	        }
 	        else if (command == "/exit")
 	        {
@@ -182,7 +190,8 @@ int main(int argc, char *argv[])
 	        }
 	        else
 	        {
-		        std::cout << "Unknown command: '" + command + "', argument: '" + argument + "'\n";
+		        //std::cout << "Unknown command: '" + command + "', argument: '" + argument + "'\n";
+				std::system(line.c_str());
 	        }
         }
         t.join();
