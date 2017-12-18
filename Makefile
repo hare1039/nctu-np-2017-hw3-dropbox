@@ -1,16 +1,16 @@
 CXX = clang++
-FLAGS = -lboost_system -pthread -std=c++14
+FLAGS = -lboost_system -pthread -std=c++14 -g
 
-PHONY: all
-all: server
+.PHONY: all
+all: server client
 
 server: server.cpp
-    $(CXX) -o $@ $(FLAGS) $<
+	$(CXX) -o $@ $(FLAGS) $<
 
 client: client.cpp
-    $(CXX) -o $@ $(FLAGS) $<
+	$(CXX) -o $@ $(FLAGS) $<
 
 
 .PHONY: clean
 clean:
-    rm -rf server client 2>/dev/null
+	rm -rf server client 2>/dev/null
