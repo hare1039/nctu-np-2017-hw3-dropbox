@@ -100,7 +100,7 @@ private:
 
 	void launch_async_read_body()
 	{
-		std::cout << "Downloading file: " << read_data_.getfilename() << "\nProgress : [ ]" << std::endl;
+		std::cout << "Downloading file: " << read_data_.getfilename() << "\nProgress : [ ]";
 		boost::asio::async_read(
 			socket_,
 			boost::asio::buffer(read_data_.body_ref()),
@@ -108,7 +108,7 @@ private:
 			{
 				if (not err)
 				{
-					std::cout << "\33[2K\rProgress : [#]\nUploading file: " << read_data_.getfilename() << " complete.\n";
+					std::cout << "\33[2K\rProgress : [#]\nDownloading file: " << read_data_.getfilename() << " complete.\n";
 					read_data_.save();
 					launch_async_read_header();
 				}
