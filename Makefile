@@ -1,5 +1,5 @@
 CXX = clang++
-FLAGS = -lboost_system -pthread -std=c++14
+FLAGS = -lboost_system -pthread -std=c++14 -O2
 
 .PHONY: all
 all: server client
