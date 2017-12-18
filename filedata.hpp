@@ -27,6 +27,9 @@ public:
 	vbyte& body_ref() {
 		return body_;
 	}
+	std::string getfilename() {
+		return this->filename;
+	}
 
 	vbyte& data() {
 		header_.swap(static_data_);
@@ -50,7 +53,7 @@ public:
 			header_[2] = static_cast<std::uint8_t>(size >> 16);
             header_[1] = static_cast<std::uint8_t>(size >> 8);
 			header_[0] = static_cast<std::uint8_t>(size);
-			std::cout << "[filedata] encode:[3]:" << static_cast<int>(header_[3]) << " [2]:" << static_cast<int>(header_[2]) << " [1]:" << static_cast<int>(header_[1]) << " [0]:" << static_cast<int>(header_[0]) << "\n";
+//			std::cout << "[filedata] encode:[3]:" << static_cast<int>(header_[3]) << " [2]:" << static_cast<int>(header_[2]) << " [1]:" << static_cast<int>(header_[1]) << " [0]:" << static_cast<int>(header_[0]) << "\n";
 			int i(4);
 			for(char c: filename)
 			{
@@ -67,7 +70,7 @@ public:
 		std::ofstream f(filename, std::ios::out | std::ios::binary);
 		if(f.is_open())
 		{
-			std::cout << "[filedata] " << this->filename << " saved\n";
+			std::cout << this->filename << " saved\n";
 			f.write(reinterpret_cast<char *>(body_.data()), body_.size());
 		}
 	}
@@ -83,7 +86,7 @@ public:
 		this->filename = "";
 		for(int i(4); i < header_legnth; i++)
 			this->filename += header_[i];
-		std::cout << "[filedata] decode:{bodysize: " << bodysize << ", filename: " << this->filename << "}\n";
+		//std::cout << "[filedata] decode:{bodysize: " << bodysize << ", filename: " << this->filename << "}\n";
 		return true;
 	}
 };

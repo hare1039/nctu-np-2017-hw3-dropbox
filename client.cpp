@@ -47,12 +47,14 @@ public:
 	void sleep_for(int seconds)
 	{
 		io_service_.dispatch([seconds]{
+			std::cout << "Client starts to sleep\n";
 			using namespace std::chrono_literals;
 			for(int count(1); count <= seconds; count++)
 			{
 				std::this_thread::sleep_for(1s);
-				std::cout << "Client starts to sleep " << count << std::endl;
+				std::cout << "Sleep " << count << std::endl;
 			}
+			std::cout << "Client wakes up\n";
 		});
 	}
 private:
@@ -98,6 +100,7 @@ private:
 
 	void launch_async_read_body()
 	{
+		std::cout << "Downloading file: " << read_data_.getfilename() << "\nProgress : [ ]" << std::endl;
 		boost::asio::async_read(
 			socket_,
 			boost::asio::buffer(read_data_.body_ref()),
@@ -105,6 +108,7 @@ private:
 			{
 				if (not err)
 				{
+					std::cout << "\33[2K\rProgress : [#]\nUploading file: " << read_data_.getfilename() << " complete.\n";
 					read_data_.save();
 					launch_async_read_header();
 				}
@@ -118,6 +122,7 @@ private:
 
 	void launch_async_write()
 	{
+		std::cout << "Uploading file: " << write_data_queue_.front().getfilename() << "\nProgress : [ ]";
 		boost::asio::async_write(
 			socket_,
 			boost::asio::buffer(write_data_queue_.front().data()),
@@ -125,6 +130,7 @@ private:
 			{
 				if(not err)
 				{
+					std::cout << "\33[2K\rProgress : [#]\nUploading file: " << write_data_queue_.front().getfilename() << " complete.\n";
 					write_data_queue_.pop_front();
 					if(not write_data_queue_.empty())
 					{
